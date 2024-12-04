@@ -19,7 +19,14 @@ def series_values():
     # Get the area_code values
     associated_area_codes = filtered_area_df["area_code"].unique()
 
-    # Print or use the results as needed
-    print(f"Associated area codes: {associated_area_codes}")
+    # Filter the series data for measure_code == 4 and area_code in associated_area_codes
+    filtered_series = series_df[
+        (series_df['measure_code'] == MEASURE) &
+        (series_df['area_code'].isin(associated_area_codes))
+    ]
+    # Extract unique series_id values
+    filtered_series_ids = filtered_series['series_id'].unique()
+
+    print(filtered_series_ids)
 
 series_values()
