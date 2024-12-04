@@ -56,9 +56,9 @@ def clean_series(area_codes_df):
 
 
 def generate_unemployment_data():
-    real_estate_df = clean_real_estate()
-    area_codes_df = clean_area_codes(real_estate_df)
-    series_df = clean_series(area_codes_df)
+    # real_estate_df = clean_real_estate()
+    # area_codes_df = clean_area_codes(real_estate_df)
+    # series_df = clean_series(area_codes_df)
     series_df = pd.read_csv("./Series ID.csv")
     unemployment_df = pd.read_csv("./la.data.13.Connecticut.csv")
     unemployment_df = unemployment_df.rename(
@@ -81,4 +81,5 @@ def generate_unemployment_data():
 
 
 if __name__ == "__main__":
-    generate_unemployment_data()
+    df = generate_unemployment_data()
+    df.to_csv('./Connecticut Unemployed.csv')
