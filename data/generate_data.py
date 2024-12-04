@@ -1,25 +1,25 @@
 import pandas as pd
 
 
-def clean_real_estate() -> pd.DataFrame:
-    df = pd.read_csv("./Real_Estate_Sales_2001-2021_GL.csv", low_memory=False)
+# def clean_real_estate() -> pd.DataFrame:
+#     df = pd.read_csv("./Real_Estate_Sales_2001-2021_GL.csv", low_memory=False)
 
-    property_types = ["Single Family", "Two Family", "Three Family", "Four Family"]
-    real_estate_columns = [
-        "List Year",
-        "Property Type",
-        "Town",
-        "Assessed Value",
-        "Sale Amount",
-    ]
-    residential_prices = df.loc[df["Property Type"].isin(property_types)][
-        real_estate_columns
-    ]
-    residential_prices.dropna(inplace=True)
-    residential_prices = residential_prices.loc[
-        residential_prices["Town"] != "***Unknown***"
-    ]
-    return residential_prices
+#     property_types = ["Single Family", "Two Family", "Three Family", "Four Family"]
+#     real_estate_columns = [
+#         "List Year",
+#         "Property Type",
+#         "Town",
+#         "Assessed Value",
+#         "Sale Amount",
+#     ]
+#     residential_prices = df.loc[df["Property Type"].isin(property_types)][
+#         real_estate_columns
+#     ]
+#     residential_prices.dropna(inplace=True)
+#     residential_prices = residential_prices.loc[
+#         residential_prices["Town"] != "***Unknown***"
+#     ]
+#     return residential_prices
 
 
 def clean_area_codes(real_estate_df) -> pd.Series:
@@ -56,7 +56,7 @@ def clean_series(area_codes_df):
 
 
 def generate_unemployment_data():
-    # real_estate_df = clean_real_estate()
+    # real_estate_df = './data/Real Estate.csv'
     # area_codes_df = clean_area_codes(real_estate_df)
     # series_df = clean_series(area_codes_df)
     series_df = pd.read_csv("./Series ID.csv")
