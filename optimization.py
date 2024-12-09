@@ -15,7 +15,7 @@ real_estate_df = pd.read_csv("./Real-Estate Forecast/all_cities_forecasts.csv")
 cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
 # Parameters
-TOTAL_BUDGET = 3_000_000_000
+TOTAL_BUDGET = 5_000_000
 MONTHLY_REEMPLOYMENT = 2000
 
 cost = dict()
@@ -24,7 +24,8 @@ real_estate_df.set_index(['Town', 'Date'], inplace=True)
 unemployment_df.set_index(['Town', 'Date'], inplace=True)
 for city in cities:
     for month in months:
-        cost[(city, month)] = real_estate_df.loc[(city, month), 'Sale Amount']
+        # Commercial costs seeem to be 1.3x residential housing costs
+        cost[(city, month)] = 1.3 * real_estate_df.loc[(city, month), 'Sale Amount']
         unemployed[(city, month)] = unemployment_df.loc[(city, month), 'Unemployed']
 
 model = gp.Model("Minimize_Total_Unemployed")
