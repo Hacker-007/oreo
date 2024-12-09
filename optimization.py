@@ -1,20 +1,27 @@
 import gurobipy as gp
+import pandas as pd
 from gurobipy import GRB
 
 # Sets
-months = list(range(1, 3))
-cities = ['city1', 'city2', 'city3']
+date_range = pd.date_range(start='2024-11-01', end='2025-10-01', freq='MS')
+months = [date.strftime('%Y-%m-%d') for date in date_range]
+month_to_int = {date: i for i, date in enumerate(months, start=1)}
+int_to_month = {i: date for i, date in enumerate(months, start=1)}
+unemployment_df = pd.read_csv("./Unemployment Forecast/Forecasted Unemployment.csv")
+real_estate_df = pd.read_csv("./Real-Estate Forecast/forecasted_real_estate.csv")
+cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
 # Parameters
-cost = {('city1', 1): 5000, ('city1', 2): 600,  # Cost of opening re-employment centers
-        ('city2', 1): 400, ('city2', 2): 500,
-        ('city3', 1): 700, ('city3', 2): 800}  # Extend for all cities/months
+cost = dict()
+unemployed = dict()
+real_estate_df.set_index(['Town', 'Date'], inplace=True)
+unemployment_df.set_index(['Town', 'Date'], inplace=True)
+for city in cities:
+    for month in months:
+        cost[(city, month)] = real_estate_df.loc[(city, month), 'Sale Amount']
+        unemployed[(city, month)] = unemployment_df.loc[(city, month), 'Unemployed']
 
-unemployed = {('city1', 1): 5000, ('city1', 2): 6000,  # Unemployed individuals
-      ('city2', 1): 3000, ('city2', 2): 4000,
-      ('city3', 1): 7000, ('city3', 2): 8000}  # Extend for all cities/months
-
-budget = 10  # Total budget
+budget = 1000  # Total budget
 
 model = gp.Model("Minimize_Total_Unemployed")
 
@@ -28,11 +35,11 @@ model.setObjective(sum(sum(r[c, m] for m in months) for c in cities), GRB.MINIMI
 # Constraints
 # Cost constraint: Total cost of centers
 model.addConstr(
-    sum(sum(cost[c, m] * (p[c, m] - p[c, m - 1] if m > 1 else p[c, m]) for m in months) for c in cities) <= budget
+    sum(sum(cost[c, m] * (p[c, m] - p[c, int_to_month[month_to_int[m] - 1]] if month_to_int[m] > 1 else p[c, m]) for m in months) for c in cities) <= budget
 )
 
 # Re-employment centers should be non-decreasing over time
-model.addConstrs(p[c, m + 1] >= p[c, m] for c in cities for m in months[:-1])
+model.addConstrs(p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m] for c in cities for m in months[:-1])
 
 # Residual unemployment is the max of 0 and actual residual unemployment
 model.addConstrs(r[c, m] >= unemployed[c, m] - 4000 * p[c, m] for c in cities for m in months)
@@ -46,7 +53,7 @@ model.optimize()
 # Output results
 if model.status == GRB.OPTIMAL:
     print(f"Optimal Objective Value (Total Resiudal Unemployment): {model.objVal}")
-    for c in cities:
+    for c in list(cities)[:5]:
         for m in months:
             print(f"City {c}, Month {m}: p = {p[c, m].x}")
 else:
