@@ -1,5 +1,8 @@
 import gurobipy as gp
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from gurobipy import GRB
 
 # Sets
@@ -8,10 +11,13 @@ months = [date.strftime('%Y-%m-%d') for date in date_range]
 month_to_int = {date: i for i, date in enumerate(months, start=1)}
 int_to_month = {i: date for i, date in enumerate(months, start=1)}
 unemployment_df = pd.read_csv("./Unemployment Forecast/Forecasted Unemployment.csv")
-real_estate_df = pd.read_csv("./Real-Estate Forecast/forecasted_real_estate.csv")
+real_estate_df = pd.read_csv("./Real-Estate Forecast/all_cities_forecasts.csv")
 cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
 # Parameters
+TOTAL_BUDGET = 3_000_000_000
+MONTHLY_REEMPLOYMENT = 2000
+
 cost = dict()
 unemployed = dict()
 real_estate_df.set_index(['Town', 'Date'], inplace=True)
@@ -20,9 +26,6 @@ for city in cities:
     for month in months:
         cost[(city, month)] = real_estate_df.loc[(city, month), 'Sale Amount']
         unemployed[(city, month)] = unemployment_df.loc[(city, month), 'Unemployed']
-
-TOTAL_BUDGET = 300000
-MONTHLY_REEMPLOYMENT = 4000
 
 model = gp.Model("Minimize_Total_Unemployed")
 
@@ -51,7 +54,7 @@ model.addConstrs(p[c, m] >= 0 for c in cities for m in months)
 
 model.optimize()
 
-# Output results
+# RESULTS
 if model.status == GRB.OPTIMAL:
     print(f"Optimal Objective Value (Total Resiudal Unemployment): {model.objVal}")
     for c in list(cities)[:5]:
@@ -59,3 +62,25 @@ if model.status == GRB.OPTIMAL:
             print(f"City {c}, Month {m}: p = {p[c, m].x}")
 else:
     print("No optimal solution found.")
+
+p_values = { (city, month): p[city, month].x for city in cities for month in months }
+
+# Convert the results into a DataFrame for easier plotting
+data = []
+for city in cities:
+    row = []
+    for month in months:
+        row.append(p_values.get((city, month), 0))  # Default to 0 if not found
+    data.append(row)
+
+df = pd.DataFrame(data, columns=list(months), index=list(cities))
+
+# Create a heatmap
+plt.figure(figsize=(12, 8))
+sns.heatmap(df, annot=False, fmt=".1f", cmap="coolwarm", cbar_kws={'label': 'Re-employment Centers'})
+plt.title("Number of Re-employment Centers Across Cities and Months")
+plt.xlabel("Month")
+plt.ylabel("City")
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+plt.show()
