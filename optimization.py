@@ -74,6 +74,7 @@ for city in cities:
     data.append(row)
 
 df = pd.DataFrame(data, columns=list(months), index=list(cities))
+df.to_csv(f'Optimal Location - {TOTAL_BUDGET} - {MONTHLY_REEMPLOYMENT}.csv')
 
 # Create a heatmap
 plt.figure(figsize=(12, 8))
