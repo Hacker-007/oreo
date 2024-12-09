@@ -21,7 +21,8 @@ for city in cities:
         cost[(city, month)] = real_estate_df.loc[(city, month), 'Sale Amount']
         unemployed[(city, month)] = unemployment_df.loc[(city, month), 'Unemployed']
 
-budget = 1000  # Total budget
+TOTAL_BUDGET = 300000
+MONTHLY_REEMPLOYMENT = 4000
 
 model = gp.Model("Minimize_Total_Unemployed")
 
@@ -35,14 +36,14 @@ model.setObjective(sum(sum(r[c, m] for m in months) for c in cities), GRB.MINIMI
 # Constraints
 # Cost constraint: Total cost of centers
 model.addConstr(
-    sum(sum(cost[c, m] * (p[c, m] - p[c, int_to_month[month_to_int[m] - 1]] if month_to_int[m] > 1 else p[c, m]) for m in months) for c in cities) <= budget
+    sum(sum(cost[c, m] * (p[c, m] - p[c, int_to_month[month_to_int[m] - 1]] if month_to_int[m] > 1 else p[c, m]) for m in months) for c in cities) <= TOTAL_BUDGET
 )
 
 # Re-employment centers should be non-decreasing over time
 model.addConstrs(p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m] for c in cities for m in months[:-1])
 
 # Residual unemployment is the max of 0 and actual residual unemployment
-model.addConstrs(r[c, m] >= unemployed[c, m] - 4000 * p[c, m] for c in cities for m in months)
+model.addConstrs(r[c, m] >= unemployed[c, m] - MONTHLY_REEMPLOYMENT * p[c, m] for c in cities for m in months)
 model.addConstrs(r[c, m] >= 0 for c in cities for m in months)
 
 # Non-negativity constraint
