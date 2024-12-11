@@ -17,6 +17,7 @@ cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 # Parameters
 TOTAL_BUDGET = 25_000_000
 MONTHLY_REEMPLOYMENT = 500
+PERCENT_HELPED = 0.7
 
 cost = dict()
 unemployed = dict()
@@ -47,7 +48,7 @@ model.addConstr(
 model.addConstrs(p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m] for c in cities for m in months[:-1])
 
 # Residual unemployment is the max of 0 and actual residual unemployment
-model.addConstrs(r[c, m] >= unemployed[c, m] - MONTHLY_REEMPLOYMENT * p[c, m] for c in cities for m in months)
+model.addConstrs(r[c, m] >= unemployed[c, m] - PERCENT_HELPED * MONTHLY_REEMPLOYMENT * p[c, m] - sum(unemployed[c,int_to_month[k]] - r[c,int_to_month[k]] for k in range(1,month_to_int[m])) for c in cities for m in months)
 model.addConstrs(r[c, m] >= 0 for c in cities for m in months)
 
 # Non-negativity constraint
