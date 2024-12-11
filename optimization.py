@@ -12,12 +12,12 @@ month_to_int = {date: i for i, date in enumerate(months, start=1)}
 int_to_month = {i: date for i, date in enumerate(months, start=1)}
 unemployment_df = pd.read_csv("./Unemployment Forecast/Forecasted Unemployment.csv")
 real_estate_df = pd.read_csv("./Real-Estate Forecast/all_cities_forecasts.csv")
-cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
+cities = list(set(unemployment_df["Town"]) & set(real_estate_df["Town"]))
 
 # Parameters
-TOTAL_BUDGET = 5_000_000
-MONTHLY_REEMPLOYMENT = 500
-PERCENT_HELPED = 0.7
+TOTAL_BUDGET = 50_000_000
+MONTHLY_REEMPLOYMENT = 250
+PERCENT_HELPED = 0.5
 
 cost = dict()
 unemployed = dict()
@@ -78,6 +78,7 @@ for city in cities:
 df = pd.DataFrame(data, columns=list(months), index=list(cities))
 df.to_csv(f'Optimal Location - {TOTAL_BUDGET} - {MONTHLY_REEMPLOYMENT}.csv')
 
+# df = pd.read_csv("Final changing optimization.csv").set_index('Unnamed: 0')
 # Create a heatmap
 plt.figure(figsize=(12, 8))
 sns.heatmap(df, annot=False, fmt=".1f", cmap="coolwarm", cbar_kws={'label': 'Re-employment Centers'})

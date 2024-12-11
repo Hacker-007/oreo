@@ -1,8 +1,8 @@
 import pandas as pd
 from PIL import Image
 import numpy as np
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
+# from geopy.geocoders import Nominatim
+# from geopy.exc import GeocoderTimedOut
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 import ssl
@@ -291,4 +291,4 @@ def create_animation(data_file, output_file='centers_animation.gif'):
     print("Animation complete!")
 
 if __name__ == "__main__":
-    create_animation('Optimal Location - 25000000 - 500.csv')
+    create_animation('Optimal Location - 50000000 - 250.csv')
