@@ -15,7 +15,7 @@ real_estate_df = pd.read_csv("./Real-Estate Forecast/all_cities_forecasts.csv")
 cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
 # Parameters
-TOTAL_BUDGET = 25_000_000
+TOTAL_BUDGET = 5_000_000
 MONTHLY_REEMPLOYMENT = 500
 PERCENT_HELPED = 0.7
 
