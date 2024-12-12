@@ -1,6 +1,5 @@
 import warnings
-import os
-import sys
+from data import get_real_estate_df, get_unemployment_df
 
 from tqdm import tqdm
 import pandas as pd
@@ -13,13 +12,9 @@ from gurobipy import GRB
 warnings.filterwarnings("ignore")
 
 
-def forecast_unemployment(input_file, output_file):
+def forecast_unemployment(unemployed_df, output_file):
     """Generate unemployment forecasts using ARIMA models."""
     print("\n1. Forecasting Unemployment...")
-
-    # Read the data
-    unemployed_df = pd.read_csv(input_file)
-    unemployed_df["Date"] = pd.to_datetime(unemployed_df["Date"])
 
     # Create future dates
     future_dates = pd.date_range(start="2024-11-01", end="2025-10-01", freq="MS")
@@ -62,18 +57,12 @@ def forecast_unemployment(input_file, output_file):
     print(f"Unemployment forecasts saved to {output_file}")
 
 
-def forecast_real_estate(input_file, output_file):
+def forecast_real_estate(df, output_file):
     """Generate real estate price forecasts using ARIMA models."""
     print("\n2. Forecasting Real Estate Prices...")
 
-    # Read the data
-    df = pd.read_csv(input_file)
-    df["Date"] = pd.to_datetime(df["Date"])
-
     # Get unique cities, excluding 'Unknown'
     cities = sorted(df["Town"].unique())
-    if "Unknown" in cities:
-        cities.remove("Unknown")
 
     # Create future dates
     future_dates = pd.date_range(start="2024-11-01", end="2025-10-01", freq="MS")
@@ -148,9 +137,9 @@ def optimize_locations(
     real_estate_df = pd.read_csv(real_estate_file)
 
     # Get common cities and date range
-    cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
     date_range = pd.date_range(start="2024-11-01", end="2025-10-01", freq="MS")
     months = [date.strftime("%Y-%m-%d") for date in date_range]
+    cities = list(set(unemployment_df["Town"]) & set(real_estate_df["Town"]))[:25]
 
     # Setup month mappings
     month_to_int = {date: i for i, date in enumerate(months, start=1)}
@@ -162,10 +151,9 @@ def optimize_locations(
 
     real_estate_df.set_index(["Town", "Date"], inplace=True)
     unemployment_df.set_index(["Town", "Date"], inplace=True)
-
     for city in cities:
         for month in months:
-            cost[(city, month)] = 1.3 * real_estate_df.loc[(city, month), "Sale Amount"]
+            cost[(city, month)] = real_estate_df.loc[(city, month), "Sale Amount"]
             unemployed[(city, month)] = unemployment_df.loc[(city, month), "Unemployed"]
 
     # Create and solve optimization model
@@ -195,14 +183,15 @@ def optimize_locations(
         <= budget
     )
 
-    # Center Persistence Constraint
+    # Re-employment centers should be non-decreasing over time
     model.addConstrs(
         p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m]
         for c in cities
         for m in months[:-1]
     )
 
-    # Residual Unemployed Individuals Constraint
+    # Residual unemployment is the max of 0 and actual residual unemployment
+    model.addConstrs(r[c, m] >= 0 for c in cities for m in months)
     model.addConstrs(
         r[c, m]
         >= unemployed[c, m]
@@ -214,6 +203,9 @@ def optimize_locations(
         for c in cities
         for m in months
     )
+
+    # Non-negativity constraint
+    model.addConstrs(p[c, m] >= 0 for c in cities for m in months)
 
     # Solve
     model.optimize()
@@ -245,28 +237,25 @@ def create_visualization(input_file):
 
 def main():
     # Parameters
-    TOTAL_BUDGET = 25_000_000
-    MONTHLY_REEMPLOYMENT = 500
-    PERCENT_HELPED = 0.7
+    TOTAL_BUDGET = 50_000_000
+    MONTHLY_REEMPLOYMENT = 250
+    PERCENT_HELPED = 0.5
 
     # File paths
-    UNEMPLOYMENT_INPUT = "./Unemployment Forecast/Connecticut Unemployed.csv"
-    REAL_ESTATE_INPUT = "./Real-Estate Forecast/final_monthly_averages.csv"
     UNEMPLOYMENT_FORECAST = "./Unemployment Forecast/Forecasted Unemployment.csv"
     REAL_ESTATE_FORECAST = "./Real-Estate Forecast/all_cities_forecasts.csv"
+
+
     OPTIMIZATION_OUTPUT = (
-        f"Optimal Location - {TOTAL_BUDGET} - {MONTHLY_REEMPLOYMENT}.csv"
+        f"Optimal Location - {TOTAL_BUDGET} - {MONTHLY_REEMPLOYMENT} - {PERCENT_HELPED}.csv"
     )
 
-    # Check if input files exist
-    for file in [UNEMPLOYMENT_INPUT, REAL_ESTATE_INPUT]:
-        if not os.path.exists(file):
-            print(f"Error: Input file {file} not found")
-            sys.exit(1)
+    real_estate_df = get_real_estate_df()
+    unemployed_df = get_unemployment_df(real_estate_df)
 
     # Run pipeline
-    forecast_unemployment(UNEMPLOYMENT_INPUT, UNEMPLOYMENT_FORECAST)
-    forecast_real_estate(REAL_ESTATE_INPUT, REAL_ESTATE_FORECAST)
+    forecast_unemployment(unemployed_df, UNEMPLOYMENT_FORECAST)
+    forecast_real_estate(real_estate_df, REAL_ESTATE_FORECAST)
     optimize_locations(
         UNEMPLOYMENT_FORECAST,
         REAL_ESTATE_FORECAST,
@@ -275,8 +264,8 @@ def main():
         PERCENT_HELPED,
         OPTIMIZATION_OUTPUT,
     )
-    create_visualization(OPTIMIZATION_OUTPUT)
 
+    create_visualization(OPTIMIZATION_OUTPUT)
     print("\nPipeline complete! Check centers_animation.gif for the visualization.")
 
 

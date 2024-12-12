@@ -76,15 +76,15 @@ def create_animation(data_file, output_file='centers_animation.gif'):
     df.set_index('Unnamed: 0', inplace=True)
     
     # Convert column names to datetime
-    df.columns = pd.to_datetime(df.columns)
+    df.index = pd.to_datetime(df.index)
     
     # Create frames
     frames = []
     previous_data = None
     
-    for date in df.columns:
+    for date in df.index:
         print(f"Processing {date.strftime('%B %Y')}...")
-        towns_data = df[date]
+        towns_data = df.loc[date]
         frame = create_bar_frame(towns_data, date, previous_data)
         frames.append(frame)
         previous_data = towns_data
