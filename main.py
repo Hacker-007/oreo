@@ -178,7 +178,7 @@ def optimize_locations(
     # Objective
     model.setObjective(sum(sum(r[c, m] for m in months) for c in cities), GRB.MINIMIZE)
 
-    # Constraints
+    # Budget Constraint
     model.addConstr(
         sum(
             sum(
@@ -195,12 +195,14 @@ def optimize_locations(
         <= budget
     )
 
+    # Center Persistence Constraint
     model.addConstrs(
         p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m]
         for c in cities
         for m in months[:-1]
     )
 
+    # Residual Unemployed Individuals Constraint
     model.addConstrs(
         r[c, m]
         >= unemployed[c, m]
