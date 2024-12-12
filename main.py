@@ -141,7 +141,7 @@ def optimize_locations(
     # Get common cities and date range
     date_range = pd.date_range(start="2024-11-01", end="2025-10-01", freq="MS")
     months = [date.strftime("%Y-%m-%d") for date in date_range]
-    cities = list(set(unemployment_df["Town"]) & set(real_estate_df["Town"]))[:25]
+    cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
     # Setup month mappings
     month_to_int = {date: i for i, date in enumerate(months, start=1)}
@@ -261,7 +261,7 @@ def main():
 
     if not os.path.exists(REAL_ESTATE_FORECAST):
         forecast_real_estate(real_estate_df, REAL_ESTATE_FORECAST)
-        
+
     optimize_locations(
         UNEMPLOYMENT_FORECAST,
         REAL_ESTATE_FORECAST,
