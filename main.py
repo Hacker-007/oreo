@@ -1,4 +1,6 @@
 import warnings
+import os
+
 from data import get_real_estate_df, get_unemployment_df
 
 from tqdm import tqdm
@@ -243,7 +245,7 @@ def main():
 
     # File paths
     UNEMPLOYMENT_FORECAST = "./Unemployment Forecast/Forecasted Unemployment.csv"
-    REAL_ESTATE_FORECAST = "./Real-Estate Forecast/all_cities_forecasts.csv"
+    REAL_ESTATE_FORECAST = "./Real Estate Forecast/Forecasted Prices.csv"
 
 
     OPTIMIZATION_OUTPUT = (
@@ -254,8 +256,12 @@ def main():
     unemployed_df = get_unemployment_df(real_estate_df)
 
     # Run pipeline
-    forecast_unemployment(unemployed_df, UNEMPLOYMENT_FORECAST)
-    forecast_real_estate(real_estate_df, REAL_ESTATE_FORECAST)
+    if not os.path.exists(UNEMPLOYMENT_FORECAST):
+        forecast_unemployment(unemployed_df, UNEMPLOYMENT_FORECAST)
+
+    if not os.path.exists(REAL_ESTATE_FORECAST):
+        forecast_real_estate(real_estate_df, REAL_ESTATE_FORECAST)
+        
     optimize_locations(
         UNEMPLOYMENT_FORECAST,
         REAL_ESTATE_FORECAST,
