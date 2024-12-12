@@ -4,3 +4,4 @@ pmdarima
 gurobipy
 matplotlib
 seaborn
+imageio

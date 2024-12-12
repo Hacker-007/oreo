@@ -12,12 +12,11 @@ month_to_int = {date: i for i, date in enumerate(months, start=1)}
 int_to_month = {i: date for i, date in enumerate(months, start=1)}
 unemployment_df = pd.read_csv("./Unemployment Forecast/Forecasted Unemployment.csv")
 real_estate_df = pd.read_csv("./Real-Estate Forecast/all_cities_forecasts.csv")
-cities = list(set(unemployment_df["Town"]) & set(real_estate_df["Town"]))
+cities = set(unemployment_df["Town"]) & set(real_estate_df["Town"])
 
 # Parameters
-TOTAL_BUDGET = 50_000_000
-MONTHLY_REEMPLOYMENT = 250
-PERCENT_HELPED = 0.5
+TOTAL_BUDGET = 3_000_000_000
+MONTHLY_REEMPLOYMENT = 2000
 
 cost = dict()
 unemployed = dict()
@@ -25,8 +24,7 @@ real_estate_df.set_index(['Town', 'Date'], inplace=True)
 unemployment_df.set_index(['Town', 'Date'], inplace=True)
 for city in cities:
     for month in months:
-        # Commercial costs seeem to be 1.3x residential housing costs
-        cost[(city, month)] = 1.3 * real_estate_df.loc[(city, month), 'Sale Amount']
+        cost[(city, month)] = real_estate_df.loc[(city, month), 'Sale Amount']
         unemployed[(city, month)] = unemployment_df.loc[(city, month), 'Unemployed']
 
 model = gp.Model("Minimize_Total_Unemployed")
@@ -48,7 +46,7 @@ model.addConstr(
 model.addConstrs(p[c, int_to_month[month_to_int[m] + 1]] >= p[c, m] for c in cities for m in months[:-1])
 
 # Residual unemployment is the max of 0 and actual residual unemployment
-model.addConstrs(r[c, m] >= unemployed[c, m] - PERCENT_HELPED * MONTHLY_REEMPLOYMENT * p[c, m] - sum(unemployed[c,int_to_month[k]] - r[c,int_to_month[k]] for k in range(1,month_to_int[m])) for c in cities for m in months)
+model.addConstrs(r[c, m] >= unemployed[c, m] - MONTHLY_REEMPLOYMENT * p[c, m] for c in cities for m in months)
 model.addConstrs(r[c, m] >= 0 for c in cities for m in months)
 
 # Non-negativity constraint
@@ -76,9 +74,7 @@ for city in cities:
     data.append(row)
 
 df = pd.DataFrame(data, columns=list(months), index=list(cities))
-df.to_csv(f'Optimal Location - {TOTAL_BUDGET} - {MONTHLY_REEMPLOYMENT}.csv')
 
-# df = pd.read_csv("Final changing optimization.csv").set_index('Unnamed: 0')
 # Create a heatmap
 plt.figure(figsize=(12, 8))
 sns.heatmap(df, annot=False, fmt=".1f", cmap="coolwarm", cbar_kws={'label': 'Re-employment Centers'})

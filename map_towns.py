@@ -1,20 +1,11 @@
-import pandas as pd
-from PIL import Image
-import numpy as np
-# from geopy.geocoders import Nominatim
-# from geopy.exc import GeocoderTimedOut
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as pe
-import ssl
-import certifi
-import urllib3
-import imageio
-from datetime import datetime
 import io
-from matplotlib.patheffects import withStroke, Stroke
 
-# Disable SSL verification warnings
-urllib3.disable_warnings()
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+import imageio
+from PIL import Image
 
 def create_bar_frame(towns_data, date, previous_data=None):
     """Create a single frame for the bar chart animation."""
@@ -102,6 +93,3 @@ def create_animation(data_file, output_file='centers_animation.gif'):
     print(f"Saving animation to {output_file}...")
     imageio.mimsave(output_file, frames, duration=2000, loop=0)  # loop=0 means infinite loop
     print("Animation complete!")
-
-if __name__ == "__main__":
-    create_animation('Optimal Location - 50000000 - 250.csv')
